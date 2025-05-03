@@ -6,6 +6,11 @@ variable "region" {
   type = string
 }
 
+variable "availability_zone_names" {
+  type    = list(string)
+  default = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+}
+
 variable "vpc_cidr" {
   type = string
 }
