@@ -16,26 +16,49 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "5.40.0"
-    }
+resource "aws_eip" "nat" {
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_subnet_1.id
+
+  tags = {
+    Name = format("%s-nat-gateway", var.prefix)
   }
 }
 
-provider "aws" {
-  region = var.region
-}
-
-# Public Subnet : Availability Zone
+# Public Subnet 1: Availability Zone 1
 resource "aws_subnet" "public_subnet_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.subnet1_cidr
   availability_zone = var.availability_zone_names[0]
   map_public_ip_on_launch = true
 }
+
+# Public Subnet 2: Availability Zone 2
+resource "aws_subnet" "public_subnet_2" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet2_cidr
+  availability_zone = var.availability_zone_names[1]
+  map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "private_subnet_1" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet3_cidr
+  availability_zone = var.availability_zone_names[1]
+  map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "private_subnet_2" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.subnet3_cidr
+  availability_zone = var.availability_zone_names[1]
+  map_public_ip_on_launch = true
+}
+
 
 resource "aws_route_table" "public_routetable" {
   vpc_id = aws_vpc.main.id
@@ -55,3 +78,31 @@ resource "aws_route_table_association" "public_subnet_1" {
   route_table_id = aws_route_table.public_routetable.id
 }
 
+resource "aws_route_table_association" "public_subnet_2" {
+  subnet_id      = aws_subnet.public_subnet_2.id
+  route_table_id = aws_route_table.public_routetable.id
+}
+
+resource "aws_route_table_association" "private_subnet_1" {
+  subnet_id      = aws_subnet.private_subnet_1.id
+  route_table_id = aws_route_table.public_routetable.id
+}
+
+resource "aws_route_table_association" "private_subnet_2" {
+  subnet_id      = aws_subnet.private_subnet_2.id
+  route_table_id = aws_route_table.public_routetable.id
+}
+
+# provider.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "5.40.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
