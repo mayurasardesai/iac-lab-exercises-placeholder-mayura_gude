@@ -8,6 +8,20 @@ resource "aws_vpc" "main" {
   }
 }
 
+# provider.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "5.40.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.region
+}
+
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -45,16 +59,18 @@ resource "aws_subnet" "public_subnet_2" {
   map_public_ip_on_launch = true
 }
 
+# Public Subnet 1: Availability Zone 2
 resource "aws_subnet" "private_subnet_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.subnet3_cidr
-  availability_zone = var.availability_zone_names[1]
+  availability_zone = var.availability_zone_names[0]
   map_public_ip_on_launch = true
 }
 
+# Public Subnet 2: Availability Zone 2
 resource "aws_subnet" "private_subnet_2" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = var.subnet3_cidr
+  cidr_block        = var.subnet4_cidr
   availability_zone = var.availability_zone_names[1]
   map_public_ip_on_launch = true
 }
@@ -73,6 +89,20 @@ resource "aws_route_table" "public_routetable" {
   }
 }
 
+resource "aws_route_table" "private_routetable" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.nat.id
+  }
+
+  tags = {
+    Name = format("%s-private-route-table", var.prefix)
+  }
+}
+
+
 resource "aws_route_table_association" "public_subnet_1" {
   subnet_id      = aws_subnet.public_subnet_1.id
   route_table_id = aws_route_table.public_routetable.id
@@ -85,24 +115,12 @@ resource "aws_route_table_association" "public_subnet_2" {
 
 resource "aws_route_table_association" "private_subnet_1" {
   subnet_id      = aws_subnet.private_subnet_1.id
-  route_table_id = aws_route_table.public_routetable.id
+  route_table_id = aws_route_table.private_routetable.id
 }
 
 resource "aws_route_table_association" "private_subnet_2" {
   subnet_id      = aws_subnet.private_subnet_2.id
-  route_table_id = aws_route_table.public_routetable.id
+  route_table_id = aws_route_table.private_routetable.id
 }
 
-# provider.tf
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "5.40.0"
-    }
-  }
-}
 
-provider "aws" {
-  region = var.region
-}
