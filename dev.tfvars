@@ -1,5 +1,5 @@
 region = "ap-south-1"
-prefix = "may-g-iac-lab"
+prefix = "may-lab"
 vpc_cidr     = "192.168.1.0/25"
 subnet1_cidr = "192.168.1.0/28"
 subnet2_cidr = "192.168.1.16/28"
